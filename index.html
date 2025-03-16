@@ -66,7 +66,7 @@
   </div>
 
   <script>
-    const backendUrl = 'https://script.google.com/macros/s/AKfycbzCKlAQAHSn6Lt5zjq5EHIgcIsB7LrlGQrCk0yPxO4m35eeTGcAX1b4SihD9fQyORTknw/exec';
+    const backendUrl = 'https://script.google.com/macros/s/AKfycbw8OYK3uBYJTeY-x1XV3tOLb5NiEjt67Ap3YPO0O7c_x6tsbdzlxQrN_LwghEZLZCmoMA/exec';
 
     let userTag = '';
 
@@ -75,52 +75,82 @@
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
 
-      const response = await fetch(backendUrl, {
-        method: 'POST',
-        body: JSON.stringify({
-          action: 'register',
-          name,
-          email,
-          password,
-        }),
-      });
-      const data = await response.json();
-      userTag = data.tag;
-      document.getElementById('register').style.display = 'none';
-      document.getElementById('messenger').style.display = 'block';
-      loadMessages();
+      try {
+        const response = await fetch(backendUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'register',
+            name,
+            email,
+            password,
+          }),
+        });
+        const data = await response.json();
+        console.log('Backend Response:', data); // Debugging: Log the response
+
+        if (data.tag) {
+          userTag = data.tag;
+          document.getElementById('register').style.display = 'none';
+          document.getElementById('messenger').style.display = 'block';
+          loadMessages();
+        } else {
+          console.error('No tag received from backend');
+        }
+      } catch (error) {
+        console.error('Error during registration:', error);
+      }
     }
 
     async function sendMessage() {
       const receiverTag = document.getElementById('receiverTag').value;
       const message = document.getElementById('message').value;
 
-      await fetch(backendUrl, {
-        method: 'POST',
-        body: JSON.stringify({
-          action: 'sendMessage',
-          senderTag: userTag,
-          receiverTag,
-          message,
-        }),
-      });
-      document.getElementById('message').value = '';
-      loadMessages();
+      try {
+        const response = await fetch(backendUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'sendMessage',
+            senderTag: userTag,
+            receiverTag,
+            message,
+          }),
+        });
+        const data = await response.json();
+        console.log('Message sent:', data); // Debugging: Log the response
+        document.getElementById('message').value = '';
+        loadMessages();
+      } catch (error) {
+        console.error('Error sending message:', error);
+      }
     }
 
     async function loadMessages() {
-      const response = await fetch(backendUrl, {
-        method: 'POST',
-        body: JSON.stringify({
-          action: 'getMessages',
-          receiverTag: userTag,
-        }),
-      });
-      const data = await response.json();
-      const messagesDiv = document.getElementById('messages');
-      messagesDiv.innerHTML = data.messages
-        .map((msg) => `<p><strong>${msg[0]}:</strong> ${msg[2]}</p>`)
-        .join('');
+      try {
+        const response = await fetch(backendUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'getMessages',
+            receiverTag: userTag,
+          }),
+        });
+        const data = await response.json();
+        console.log('Messages loaded:', data); // Debugging: Log the response
+        const messagesDiv = document.getElementById('messages');
+        messagesDiv.innerHTML = data.messages
+          .map((msg) => `<p><strong>${msg[0]}:</strong> ${msg[2]}</p>`)
+          .join('');
+      } catch (error) {
+        console.error('Error loading messages:', error);
+      }
     }
 
     setInterval(loadMessages, 5000); // Refresh messages every 5 seconds
