@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Messenger</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f9;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      width: 300px;
+      text-align: center;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    .messages {
+      margin-top: 20px;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="register">
+      <h2>Sign Up</h2>
+      <input type="text" id="name" placeholder="Name">
+      <input type="email" id="email" placeholder="Email">
+      <input type="password" id="password" placeholder="Password">
+      <button onclick="register()">Sign Up</button>
+    </div>
+    <div id="messenger" style="display: none;">
+      <h2>Messenger</h2>
+      <input type="text" id="receiverTag" placeholder="Receiver Tag">
+      <input type="text" id="message" placeholder="Your Message">
+      <button onclick="sendMessage()">Send</button>
+      <div class="messages" id="messages"></div>
+    </div>
+  </div>
+
+  <script>
+    const backendUrl = 'https://script.google.com/macros/s/AKfycbzCKlAQAHSn6Lt5zjq5EHIgcIsB7LrlGQrCk0yPxO4m35eeTGcAX1b4SihD9fQyORTknw/exec';
+
+    let userTag = '';
+
+    async function register() {
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      const response = await fetch(backendUrl, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'register',
+          name,
+          email,
+          password,
+        }),
+      });
+      const data = await response.json();
+      userTag = data.tag;
+      document.getElementById('register').style.display = 'none';
+      document.getElementById('messenger').style.display = 'block';
+      loadMessages();
+    }
+
+    async function sendMessage() {
+      const receiverTag = document.getElementById('receiverTag').value;
+      const message = document.getElementById('message').value;
+
+      await fetch(backendUrl, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'sendMessage',
+          senderTag: userTag,
+          receiverTag,
+          message,
+        }),
+      });
+      document.getElementById('message').value = '';
+      loadMessages();
+    }
+
+    async function loadMessages() {
+      const response = await fetch(backendUrl, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'getMessages',
+          receiverTag: userTag,
+        }),
+      });
+      const data = await response.json();
+      const messagesDiv = document.getElementById('messages');
+      messagesDiv.innerHTML = data.messages
+        .map((msg) => `<p><strong>${msg[0]}:</strong> ${msg[2]}</p>`)
+        .join('');
+    }
+
+    setInterval(loadMessages, 5000); // Refresh messages every 5 seconds
+  </script>
+</body>
+</html>
